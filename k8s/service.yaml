@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clauseguard-ai
+  namespace: default
+  labels:
+    app: clauseguard-ai
+spec:
+  type: ClusterIP
+  selector:
+    app: clauseguard-ai
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP

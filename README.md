@@ -90,6 +90,32 @@ docker run -d -p 8080:8080 --name clauseguard clauseguard-ai:latest
 curl http://localhost:8080/healthz
 ```
 
+## Kubernetes & AWS Production Deployment
+
+ClauseGuard AI is deployed to Amazon EKS Auto Mode behind an AWS Network Load Balancer (NLB) with Ingress NGINX and Route 53 DNS.
+
+- **Live Production URL**: [https://clauseguard.alpfrtech.com](https://clauseguard.alpfrtech.com)
+- **Health Check Endpoint**: [https://clauseguard.alpfrtech.com/healthz](https://clauseguard.alpfrtech.com/healthz)
+
+### Kubernetes Manifests (`k8s/`)
+
+| File | Resource | Description |
+| :--- | :--- | :--- |
+| [`k8s/deployment.yaml`](file:///Users/alpfr/Downloads/scripts/clauseguard-ai/k8s/deployment.yaml) | `Deployment` | 2 replicas, non-root user (UID 10001), rolling update, `/healthz` liveness & readiness probes. |
+| [`k8s/service.yaml`](file:///Users/alpfr/Downloads/scripts/clauseguard-ai/k8s/service.yaml) | `Service` | ClusterIP service exposing port 8080. |
+| [`k8s/network-policy.yaml`](file:///Users/alpfr/Downloads/scripts/clauseguard-ai/k8s/network-policy.yaml) | `NetworkPolicy` | Zero-Trust isolation restricting ingress port 8080 traffic to Ingress NGINX pods only. |
+| [`k8s/ingress.yaml`](file:///Users/alpfr/Downloads/scripts/clauseguard-ai/k8s/ingress.yaml) | `Ingress` | NGINX ingress routing `clauseguard.alpfrtech.com` with rate limiting and 10MB upload limits. |
+
+### Automated Deploy & Verification Scripts
+
+```bash
+# 1. Build amd64 image, push to ECR, and apply Kubernetes manifests
+./scripts/deploy-k8s.sh
+
+# 2. Run automated 5-step health, ingress, and regression verification probe
+./scripts/verify-k8s.sh
+```
+
 ---
 
 ## API Reference
@@ -109,3 +135,4 @@ curl http://localhost:8080/healthz
 ## License
 
 MIT License. Free for commercial and private use.
+
