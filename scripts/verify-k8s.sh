@@ -43,6 +43,19 @@ else
   exit 1
 fi
 
+# 4b. Test Export Report API
+echo ""
+echo "[4b/5] Testing 1-Click Report Export API (https://${TARGET_DOMAIN}/api/export/markdown)..."
+EXPORT_RES=$(curl -fsSL -X POST --retry 3 --retry-delay 2 "https://${TARGET_DOMAIN}/api/export/markdown" \
+  -H "Content-Type: application/json" \
+  -d '{"analysis": {"filename": "test_contract.txt", "risk_summary": {"score": 85, "grade": "Low Risk", "metrics": {}}, "findings": []}}')
+if echo "${EXPORT_RES}" | grep -q "ClauseGuard AI — Executive Contract Risk Audit Report"; then
+  echo "✔ /api/export/markdown generated valid executive audit report"
+else
+  echo "✖ /api/export/markdown failed"
+  exit 1
+fi
+
 # 5. Regression Check on original demo app
 echo ""
 echo "[5/5] Regression check: Verifying original demo microservice (https://${ORIGINAL_DEMO_DOMAIN})..."

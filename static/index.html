@@ -162,11 +162,17 @@
         </div>
 
         <div class="export-actions">
-          <button type="button" class="btn-secondary" id="reset-doc-btn">
+          <button type="button" class="btn-secondary" id="reset-doc-btn" title="Analyze another document">
             <span>&larr; Analyze Another</span>
           </button>
-          <button type="button" class="btn-secondary" id="export-btn">
-            <span>📥 Print / Export PDF</span>
+          <button type="button" class="btn-secondary" id="copy-summary-btn" title="Copy executive summary to clipboard">
+            <span>📋 Copy Summary</span>
+          </button>
+          <button type="button" class="btn-secondary" id="export-md-btn" title="Download formatted Markdown report">
+            <span>📄 Download .MD</span>
+          </button>
+          <button type="button" class="btn-primary" id="export-pdf-btn" title="Open print-ready executive report to save as PDF">
+            <span>🖨️ Export PDF / Print</span>
           </button>
         </div>
       </div>
@@ -247,6 +253,9 @@
       <p style="margin-top: 0.35rem; font-size: 0.75rem;">Disclaimer: ClauseGuard AI provides automated contract analytics for informational and risk-triage purposes. It does not constitute formal legal counsel.</p>
     </div>
   </footer>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-notification" id="toast-notification" role="status" aria-live="polite"></div>
 
   <script src="/static/js/app.js"></script>
 </body>

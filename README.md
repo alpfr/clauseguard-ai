@@ -129,6 +129,9 @@ ClauseGuard AI is deployed to Amazon EKS Auto Mode behind an AWS Network Load Ba
 | **`/api/analyze/upload`** | `POST` | Multipart file upload (PDF/TXT) with complete risk audit response. |
 | **`/api/analyze/text`** | `POST` | JSON payload analysis of raw contract text. |
 | **`/api/chat`** | `POST` | Context-grounded contract Q&A assistant. |
+| **`/api/export/markdown`** | `POST` | Generates and downloads GitHub-flavored Markdown audit report. |
+| **`/api/export/html`** | `POST` | Renders standalone executive-grade printable HTML report for PDF export. |
+| **`/api/export/summary`** | `POST` | Returns concise executive summary for clipboard copying or email briefing. |
 
 ---
 

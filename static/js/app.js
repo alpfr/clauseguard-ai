@@ -19,7 +19,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const heroSection = document.getElementById("hero-section");
   const resultsDashboard = document.getElementById("results-dashboard");
   const resetDocBtn = document.getElementById("reset-doc-btn");
-  const exportBtn = document.getElementById("export-btn");
+  const exportMdBtn = document.getElementById("export-md-btn");
+  const exportPdfBtn = document.getElementById("export-pdf-btn");
+  const copySummaryBtn = document.getElementById("copy-summary-btn");
+  const toastNotification = document.getElementById("toast-notification");
 
   // Dashboard Elements
   const riskScoreVal = document.getElementById("risk-score-val");
@@ -149,10 +152,129 @@ document.addEventListener("DOMContentLoaded", () => {
     currentAnalysis = null;
   });
 
-  // Export / Print PDF
-  exportBtn.addEventListener("click", () => {
-    window.print();
-  });
+  // Helper: Toast Notifications
+  function showToast(message, duration = 3200) {
+    if (!toastNotification) return;
+    toastNotification.textContent = message;
+    toastNotification.classList.add("show");
+    setTimeout(() => {
+      toastNotification.classList.remove("show");
+    }, duration);
+  }
+
+  // 1. Export Markdown Report
+  if (exportMdBtn) {
+    exportMdBtn.addEventListener("click", async () => {
+      if (!currentAnalysis) {
+        showToast("No active analysis available to export.");
+        return;
+      }
+      try {
+        exportMdBtn.disabled = true;
+        const originalText = exportMdBtn.innerHTML;
+        exportMdBtn.innerHTML = "<span>⏳ Exporting...</span>";
+
+        const resp = await fetch("/api/export/markdown", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ analysis: currentAnalysis })
+        });
+
+        if (!resp.ok) throw new Error("Failed to generate Markdown report");
+
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        const filename = currentAnalysis.filename || "contract";
+        const cleanName = filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_").replace(/\.(txt|pdf|docx)$/i, "");
+        a.download = `${cleanName}_ClauseGuard_Audit.md`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        exportMdBtn.innerHTML = originalText;
+        exportMdBtn.disabled = false;
+        showToast("📄 Markdown report downloaded!");
+      } catch (err) {
+        console.error("Export error:", err);
+        exportMdBtn.disabled = false;
+        showToast("Failed to download Markdown report.");
+      }
+    });
+  }
+
+  // 2. Export / Print Executive PDF
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener("click", async () => {
+      if (!currentAnalysis) {
+        showToast("No active analysis available to export.");
+        return;
+      }
+      try {
+        exportPdfBtn.disabled = true;
+        const originalText = exportPdfBtn.innerHTML;
+        exportPdfBtn.innerHTML = "<span>⏳ Rendering PDF...</span>";
+
+        const resp = await fetch("/api/export/html", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ analysis: currentAnalysis })
+        });
+
+        if (!resp.ok) throw new Error("Failed to render printable report");
+
+        const htmlContent = await resp.text();
+        const printWindow = window.open("", "_blank");
+        if (printWindow) {
+          printWindow.document.open();
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+        } else {
+          // Fallback if browser blocks popups
+          const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        }
+
+        exportPdfBtn.innerHTML = originalText;
+        exportPdfBtn.disabled = false;
+        showToast("🖨️ Executive audit report opened for printing!");
+      } catch (err) {
+        console.error("PDF export error:", err);
+        exportPdfBtn.disabled = false;
+        showToast("Failed to open printable report.");
+      }
+    });
+  }
+
+  // 3. Copy Executive Summary to Clipboard
+  if (copySummaryBtn) {
+    copySummaryBtn.addEventListener("click", async () => {
+      if (!currentAnalysis) {
+        showToast("No active analysis to copy.");
+        return;
+      }
+      try {
+        const resp = await fetch("/api/export/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ analysis: currentAnalysis })
+        });
+
+        if (!resp.ok) throw new Error("Failed to generate summary");
+        const data = await resp.json();
+
+        await navigator.clipboard.writeText(data.summary);
+        showToast("📋 Executive summary copied to clipboard!");
+      } catch (err) {
+        console.error("Copy summary error:", err);
+        showToast("Failed to copy summary to clipboard.");
+      }
+    });
+  }
 
   // Upload Processing
   async function handleFileUpload(file) {

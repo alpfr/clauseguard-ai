@@ -6,9 +6,10 @@ FastAPI Server Entrypoint with static UI hosting and Kubernetes probes.
 import logging
 import os
 import socket
+import re
 from typing import Optional, Dict, Any
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +19,11 @@ from services.document_parser import parse_document, parse_text
 from services.analyzer import analyze_contract
 from services.sample_contracts import SAMPLE_CONTRACTS
 from services.chat_assistant import answer_contract_question
+from services.report_generator import (
+    generate_markdown_report,
+    generate_html_report,
+    generate_summary_text,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -174,6 +180,52 @@ async def chat_with_contract(payload: ChatRequest):
         api_key=payload.api_key
     )
     return JSONResponse(content=response)
+
+
+# ------------------------------------------------------------------------------
+# Export & Reporting API
+# ------------------------------------------------------------------------------
+class ExportRequest(BaseModel):
+    analysis: Dict[str, Any]
+
+
+@app.post("/api/export/markdown")
+async def export_markdown(payload: ExportRequest):
+    """Generate and return Markdown audit report as a downloadable attachment."""
+    try:
+        md_text = generate_markdown_report(payload.analysis)
+        filename = payload.analysis.get("filename", "agreement")
+        clean_name = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename).replace(".txt", "").replace(".pdf", "").replace(".docx", "")
+        export_filename = f"{clean_name}_ClauseGuard_Audit.md"
+        headers = {
+            "Content-Disposition": f'attachment; filename="{export_filename}"'
+        }
+        return Response(content=md_text, media_type="text/markdown; charset=utf-8", headers=headers)
+    except Exception as exc:
+        logger.error("Error generating markdown report: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/export/html")
+async def export_html(payload: ExportRequest):
+    """Generate and return standalone executive HTML audit report for printing or PDF saving."""
+    try:
+        html_content = generate_html_report(payload.analysis)
+        return HTMLResponse(content=html_content)
+    except Exception as exc:
+        logger.error("Error generating HTML report: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/api/export/summary")
+async def export_summary(payload: ExportRequest):
+    """Return compact executive audit summary for clipboard or email."""
+    try:
+        summary_text = generate_summary_text(payload.analysis)
+        return JSONResponse(content={"summary": summary_text})
+    except Exception as exc:
+        logger.error("Error generating summary: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # ------------------------------------------------------------------------------
