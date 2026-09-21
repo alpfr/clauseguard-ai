@@ -24,6 +24,7 @@ from services.report_generator import (
     generate_html_report,
     generate_summary_text,
 )
+from services.diff_engine import compute_word_diff
 
 logging.basicConfig(
     level=logging.INFO,
@@ -226,6 +227,21 @@ async def export_summary(payload: ExportRequest):
     except Exception as exc:
         logger.error("Error generating summary: %s", exc, exc_info=True)
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ------------------------------------------------------------------------------
+# Visual Redline & Diff API
+# ------------------------------------------------------------------------------
+class DiffRequest(BaseModel):
+    original: str
+    proposed: str
+
+
+@app.post("/api/diff")
+async def get_clause_diff(payload: DiffRequest):
+    """Compute word-level diff between original clause and proposed counter-language."""
+    diff_data = compute_word_diff(payload.original, payload.proposed)
+    return JSONResponse(content=diff_data)
 
 
 # ------------------------------------------------------------------------------

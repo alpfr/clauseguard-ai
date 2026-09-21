@@ -246,6 +246,65 @@
     </div>
   </div>
 
+  <!-- Visual Redline & Diff Modal -->
+  <div class="modal-backdrop" id="diff-modal" role="dialog" aria-modal="true" aria-labelledby="diff-modal-title">
+    <div class="modal-card diff-modal-card">
+      <div class="modal-header">
+        <div class="diff-title-group">
+          <span class="diff-badge" id="diff-severity-badge">CRITICAL</span>
+          <h3 class="modal-title" id="diff-modal-title">Clause Redline Comparison</h3>
+        </div>
+        <button type="button" class="btn-icon" id="close-diff-modal-btn">&times;</button>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="diff-toolbar">
+        <div class="diff-stats" id="diff-stats-text">
+          <span>Words removed: <strong id="diff-words-removed" style="color: var(--danger);">0</strong> &bull; Words added: <strong id="diff-words-added" style="color: var(--success);">0</strong></span>
+        </div>
+        <div class="diff-mode-switcher">
+          <button type="button" class="mode-btn active" id="mode-side-by-side" data-mode="side-by-side">Side-by-Side</button>
+          <button type="button" class="mode-btn" id="mode-unified" data-mode="unified">Unified Redline</button>
+        </div>
+      </div>
+
+      <!-- Diff Body Container -->
+      <div class="diff-body" id="diff-body-container">
+        <!-- Side-by-Side View -->
+        <div class="diff-columns" id="diff-side-by-side-view">
+          <div class="diff-col diff-col-left">
+            <div class="diff-col-header">
+              <span class="diff-col-tag tag-del">Original Flagged Language</span>
+              <span class="diff-col-sub" id="diff-section-tag">Section</span>
+            </div>
+            <div class="diff-content diff-content-left" id="diff-left-content"></div>
+          </div>
+          <div class="diff-col diff-col-right">
+            <div class="diff-col-header">
+              <span class="diff-col-tag tag-ins">Recommended Counter-Proposal</span>
+              <span class="diff-col-sub">Protective Terms</span>
+            </div>
+            <div class="diff-content diff-content-right" id="diff-right-content"></div>
+          </div>
+        </div>
+
+        <!-- Unified View -->
+        <div class="diff-unified-view" id="diff-unified-view" style="display: none;">
+          <div class="diff-col-header">
+            <span class="diff-col-tag tag-unified">Legal Mark-up (Deletions Struck &bull; Additions Underlined)</span>
+          </div>
+          <div class="diff-content diff-content-unified" id="diff-unified-content"></div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="diff-footer">
+        <button type="button" class="btn-secondary" id="copy-redline-btn">📋 Copy Redline Mark-up</button>
+        <button type="button" class="btn-primary" id="copy-proposal-btn">✅ Copy Clean Proposal</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="main-container">

@@ -10,6 +10,8 @@ import re
 from typing import Dict, Any, List, Optional
 import requests
 
+from services.diff_engine import compute_word_diff
+
 logger = logging.getLogger("clauseguard.analyzer")
 
 
@@ -333,11 +335,18 @@ def analyze_contract(text: str, filename: str = "agreement.pdf", api_key: Option
     findings = evaluate_rules(text)
     risk_summary = calculate_risk_score(findings)
 
+    # Pre-compute word-level redline diff for each finding
+    for f in findings:
+        excerpt = f.get("clause_excerpt", "")
+        proposal = f.get("counter_proposal", "")
+        if excerpt and proposal:
+            f["diff"] = compute_word_diff(excerpt, proposal)
+
     return {
         "filename": filename,
         "metadata": metadata,
         "risk_summary": risk_summary,
         "findings": findings,
         "char_count": len(text),
-        "analyzer_engine": "ClauseGuard Autonomous Legal Engine v2.0",
+        "analyzer_engine": "ClauseGuard Autonomous Legal Engine v3.0",
     }

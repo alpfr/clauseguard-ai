@@ -56,6 +56,19 @@ else
   exit 1
 fi
 
+# 4c. Test Visual Redline Diff API
+echo ""
+echo "[4c/5] Testing Visual Redline & Diff API (https://${TARGET_DOMAIN}/api/diff)..."
+DIFF_RES=$(curl -fsSL -X POST --retry 3 --retry-delay 2 "https://${TARGET_DOMAIN}/api/diff" \
+  -H "Content-Type: application/json" \
+  -d '{"original": "Contractor shall indemnify Client for all claims.", "proposed": "Parties shall indemnify each other capped at fees."}')
+if echo "${DIFF_RES}" | grep -q "diff-del" && echo "${DIFF_RES}" | grep -q "diff-ins"; then
+  echo "✔ /api/diff returned valid word-level redline mark-up"
+else
+  echo "✖ /api/diff failed"
+  exit 1
+fi
+
 # 5. Regression Check on original demo app
 echo ""
 echo "[5/5] Regression check: Verifying original demo microservice (https://${ORIGINAL_DEMO_DOMAIN})..."

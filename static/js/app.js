@@ -56,6 +56,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveSettingsBtn = document.getElementById("save-settings-btn");
   const apiKeyInput = document.getElementById("api-key-input");
 
+  // Diff Modal Elements
+  const diffModal = document.getElementById("diff-modal");
+  const closeDiffModalBtn = document.getElementById("close-diff-modal-btn");
+  const diffSeverityBadge = document.getElementById("diff-severity-badge");
+  const diffModalTitle = document.getElementById("diff-modal-title");
+  const diffSectionTag = document.getElementById("diff-section-tag");
+  const diffWordsRemoved = document.getElementById("diff-words-removed");
+  const diffWordsAdded = document.getElementById("diff-words-added");
+  const diffLeftContent = document.getElementById("diff-left-content");
+  const diffRightContent = document.getElementById("diff-right-content");
+  const diffUnifiedContent = document.getElementById("diff-unified-content");
+  const diffSideBySideView = document.getElementById("diff-side-by-side-view");
+  const diffUnifiedView = document.getElementById("diff-unified-view");
+  const modeSideBySideBtn = document.getElementById("mode-side-by-side");
+  const modeUnifiedBtn = document.getElementById("mode-unified");
+  const copyRedlineBtn = document.getElementById("copy-redline-btn");
+  const copyProposalBtn = document.getElementById("copy-proposal-btn");
+  let activeFindingForDiff = null;
+
   // Load Saved Theme
   const savedTheme = localStorage.getItem("clauseguard_theme") || "dark";
   document.documentElement.setAttribute("data-theme", savedTheme);
@@ -84,6 +103,91 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("clauseguard_api_key", customApiKey);
     settingsModal.style.display = "none";
   });
+
+  // Diff Modal Handlers
+  if (closeDiffModalBtn) {
+    closeDiffModalBtn.addEventListener("click", () => {
+      diffModal.style.display = "none";
+    });
+  }
+
+  window.addEventListener("click", (e) => {
+    if (e.target === diffModal) {
+      diffModal.style.display = "none";
+    }
+    if (e.target === settingsModal) {
+      settingsModal.style.display = "none";
+    }
+  });
+
+  if (modeSideBySideBtn && modeUnifiedBtn) {
+    modeSideBySideBtn.addEventListener("click", () => {
+      modeSideBySideBtn.classList.add("active");
+      modeUnifiedBtn.classList.remove("active");
+      diffSideBySideView.style.display = "grid";
+      diffUnifiedView.style.display = "none";
+    });
+
+    modeUnifiedBtn.addEventListener("click", () => {
+      modeUnifiedBtn.classList.add("active");
+      modeSideBySideBtn.classList.remove("active");
+      diffSideBySideView.style.display = "none";
+      diffUnifiedView.style.display = "block";
+    });
+  }
+
+  if (copyProposalBtn) {
+    copyProposalBtn.addEventListener("click", () => {
+      if (!activeFindingForDiff || !activeFindingForDiff.counter_proposal) return;
+      navigator.clipboard.writeText(activeFindingForDiff.counter_proposal).then(() => {
+        showToast("✅ Clean counter-proposal copied to clipboard!");
+      });
+    });
+  }
+
+  if (copyRedlineBtn) {
+    copyRedlineBtn.addEventListener("click", () => {
+      if (!activeFindingForDiff) return;
+      let redlineText = activeFindingForDiff.diff ? activeFindingForDiff.diff.unified_html : "";
+      redlineText = redlineText.replace(/<del class="diff-del">([\s\S]*?)<\/del>/g, "~~$1~~");
+      redlineText = redlineText.replace(/<ins class="diff-ins">([\s\S]*?)<\/ins>/g, "**$1**");
+      redlineText = redlineText.replace(/<[^>]+>/g, "");
+
+      navigator.clipboard.writeText(redlineText).then(() => {
+        showToast("📋 Markdown redline mark-up copied!");
+      });
+    });
+  }
+
+  function openDiffModal(finding) {
+    activeFindingForDiff = finding;
+    const diff = finding.diff || {
+      left_html: escapeHtml(finding.clause_excerpt || ""),
+      right_html: escapeHtml(finding.counter_proposal || ""),
+      unified_html: escapeHtml(finding.counter_proposal || ""),
+      stats: { words_removed: 0, words_added: 0 }
+    };
+
+    diffModalTitle.textContent = finding.title || "Clause Comparison";
+    diffSeverityBadge.textContent = (finding.severity || "WARNING").toUpperCase();
+    diffSeverityBadge.className = `diff-badge ${finding.severity || "warning"}`;
+    diffSectionTag.textContent = finding.section || finding.category || "General";
+
+    diffWordsRemoved.textContent = diff.stats.words_removed || 0;
+    diffWordsAdded.textContent = diff.stats.words_added || 0;
+
+    diffLeftContent.innerHTML = diff.left_html || "";
+    diffRightContent.innerHTML = diff.right_html || "";
+    diffUnifiedContent.innerHTML = diff.unified_html || "";
+
+    // Reset to side-by-side view default
+    modeSideBySideBtn.classList.add("active");
+    modeUnifiedBtn.classList.remove("active");
+    diffSideBySideView.style.display = "grid";
+    diffUnifiedView.style.display = "none";
+
+    diffModal.style.display = "flex";
+  }
 
   // File Upload Handlers
   browseBtn.addEventListener("click", (e) => {
@@ -449,9 +553,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="counter-label">
             <span>⚡ Proposed Negotiation Counter-Clause:</span>
           </div>
-          <button type="button" class="btn-copy" data-copy="${escapeHtml(finding.counter_proposal)}">
-            <span>📋 Copy Language</span>
-          </button>
+          <div class="counter-actions">
+            <button type="button" class="btn-redline" title="Compare visual redline diff side-by-side">
+              <span>↔️ Redline Diff</span>
+            </button>
+            <button type="button" class="btn-copy" data-copy="${escapeHtml(finding.counter_proposal)}">
+              <span>📋 Copy</span>
+            </button>
+          </div>
         </div>
         <div class="counter-text">${escapeHtml(finding.counter_proposal)}</div>
       </div>
@@ -469,6 +578,14 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="finding-explanation">${escapeHtml(finding.explanation)}</div>
       ${counterHtml}
     `;
+
+    // Add Redline Diff Button Handler
+    const redlineBtn = card.querySelector(".btn-redline");
+    if (redlineBtn) {
+      redlineBtn.addEventListener("click", () => {
+        openDiffModal(finding);
+      });
+    }
 
     // Add Copy Button Handler
     const copyBtn = card.querySelector(".btn-copy");

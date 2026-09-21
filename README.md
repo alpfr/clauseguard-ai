@@ -132,6 +132,7 @@ ClauseGuard AI is deployed to Amazon EKS Auto Mode behind an AWS Network Load Ba
 | **`/api/export/markdown`** | `POST` | Generates and downloads GitHub-flavored Markdown audit report. |
 | **`/api/export/html`** | `POST` | Renders standalone executive-grade printable HTML report for PDF export. |
 | **`/api/export/summary`** | `POST` | Returns concise executive summary for clipboard copying or email briefing. |
+| **`/api/diff`** | `POST` | Computes tokenized word-level legal diffs (Side-by-Side and Unified redlines). |
 
 ---
 
