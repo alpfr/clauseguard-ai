@@ -6,7 +6,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Global State
   let currentContractText = "";
   let currentAnalysis = null;
+  let currentPosture = localStorage.getItem("clauseguard_posture") || "vendor";
   let customApiKey = localStorage.getItem("clauseguard_api_key") || "";
+
+  const postureDescriptions = {
+    vendor: "Protecting service providers & contractors",
+    buyer: "Protecting corporate purchasers & IP rights",
+    balanced: "Objective commercial baseline standards"
+  };
 
   // DOM Elements
   const dropzone = document.getElementById("dropzone");
@@ -23,6 +30,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const exportPdfBtn = document.getElementById("export-pdf-btn");
   const copySummaryBtn = document.getElementById("copy-summary-btn");
   const toastNotification = document.getElementById("toast-notification");
+
+  // Perspective Controls
+  const postureBtns = document.querySelectorAll(".posture-btn");
+  const posturePills = document.querySelectorAll(".posture-pill");
+  const metaPosture = document.getElementById("meta-posture");
+  const resultsPostureDesc = document.getElementById("results-posture-desc");
 
   // Dashboard Elements
   const riskScoreVal = document.getElementById("risk-score-val");
@@ -135,6 +148,48 @@ document.addEventListener("DOMContentLoaded", () => {
       diffUnifiedView.style.display = "block";
     });
   }
+
+  // Perspective Switcher Logic
+  function setPosture(newPosture, shouldReanalyze = true) {
+    currentPosture = newPosture;
+    localStorage.setItem("clauseguard_posture", newPosture);
+
+    postureBtns.forEach(btn => {
+      const isMatch = btn.getAttribute("data-posture") === newPosture;
+      btn.classList.toggle("active", isMatch);
+      btn.setAttribute("aria-checked", isMatch ? "true" : "false");
+    });
+
+    posturePills.forEach(pill => {
+      const isMatch = pill.getAttribute("data-posture") === newPosture;
+      pill.classList.toggle("active", isMatch);
+    });
+
+    if (resultsPostureDesc) {
+      resultsPostureDesc.textContent = postureDescriptions[newPosture] || "";
+    }
+
+    if (shouldReanalyze && currentContractText && resultsDashboard.style.display !== "none") {
+      const currentTitle = currentAnalysis ? (currentAnalysis.filename || "contract.txt") : "contract.txt";
+      showLoading(`Re-evaluating risks from ${newPosture.toUpperCase()} posture...`);
+      analyzeContractText(currentContractText, currentTitle);
+    }
+  }
+
+  postureBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      setPosture(btn.getAttribute("data-posture"), false);
+    });
+  });
+
+  posturePills.forEach(pill => {
+    pill.addEventListener("click", () => {
+      setPosture(pill.getAttribute("data-posture"), true);
+    });
+  });
+
+  // Initialize initial posture UI state
+  setPosture(currentPosture, false);
 
   if (copyProposalBtn) {
     copyProposalBtn.addEventListener("click", () => {
@@ -382,10 +437,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Upload Processing
   async function handleFileUpload(file) {
-    showLoading(`Parsing and analyzing ${file.name}...`);
+    showLoading(`Parsing and auditing ${file.name}...`);
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("posture", currentPosture);
     if (customApiKey) {
       formData.append("api_key", customApiKey);
     }
@@ -415,6 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const payload = {
         text: text,
         filename: title,
+        posture: currentPosture,
         api_key: customApiKey || null
       };
 
@@ -462,12 +519,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // Metadata
     const meta = data.metadata || {};
     const risk = data.risk_summary || {};
+    const postureInfo = data.posture_info || {};
+
+    if (postureInfo.posture) {
+      currentPosture = postureInfo.posture;
+      setPosture(currentPosture, false);
+    }
+    if (metaPosture) {
+      metaPosture.textContent = `${postureInfo.icon || "🛡️"} ${postureInfo.title || "Vendor / Contractor"}`;
+    }
+
     docTitleDisplay.textContent = data.filename || "Contract Analysis";
     docRecDisplay.textContent = risk.recommendation || "";
     metaType.textContent = meta.contract_type || "Commercial Agreement";
     metaParties.textContent = (meta.parties && meta.parties.length > 0) ? meta.parties.join(" & ") : "Not specified";
     metaJurisdiction.textContent = meta.governing_law || "Not specified";
-    metaTerm.textContent = meta.term || "Not specified";
+    if (metaTerm) metaTerm.textContent = meta.term || "Not specified";
 
     // Risk Meter Animation
     const score = risk.score || 0;
@@ -566,6 +633,20 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     ` : "";
 
+    const scriptHtml = finding.negotiation_script ? `
+      <div class="negotiation-script-box">
+        <div class="script-header">
+          <div class="script-header-title">
+            <span>💬 Tactical Negotiation Email Script</span>
+          </div>
+          <button type="button" class="btn-copy-script" data-script="${escapeHtml(finding.negotiation_script)}">
+            <span>✉️ Copy Email Script</span>
+          </button>
+        </div>
+        <div class="script-content-preview">${escapeHtml(finding.negotiation_script)}</div>
+      </div>
+    ` : "";
+
     card.innerHTML = `
       <div class="finding-header">
         <div class="finding-title-group">
@@ -577,6 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ${excerptHtml}
       <div class="finding-explanation">${escapeHtml(finding.explanation)}</div>
       ${counterHtml}
+      ${scriptHtml}
     `;
 
     // Add Redline Diff Button Handler
@@ -597,10 +679,29 @@ document.addEventListener("DOMContentLoaded", () => {
           copyBtn.style.background = "#10b981";
           copyBtn.style.color = "#ffffff";
           setTimeout(() => {
-            copyBtn.innerHTML = "<span>📋 Copy Language</span>";
+            copyBtn.innerHTML = "<span>📋 Copy</span>";
             copyBtn.style.background = "";
             copyBtn.style.color = "";
           }, 2000);
+        });
+      });
+    }
+
+    // Add Tactical Email Script Copy Handler
+    const scriptBtn = card.querySelector(".btn-copy-script");
+    if (scriptBtn) {
+      scriptBtn.addEventListener("click", () => {
+        const scriptText = scriptBtn.getAttribute("data-script");
+        navigator.clipboard.writeText(scriptText).then(() => {
+          scriptBtn.innerHTML = "<span>✔ Script Copied!</span>";
+          scriptBtn.style.background = "#0284c7";
+          scriptBtn.style.color = "#ffffff";
+          showToast("✉️ Tactical negotiation email script copied!");
+          setTimeout(() => {
+            scriptBtn.innerHTML = "<span>✉️ Copy Email Script</span>";
+            scriptBtn.style.background = "";
+            scriptBtn.style.color = "";
+          }, 2200);
         });
       });
     }

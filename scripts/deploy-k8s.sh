@@ -4,7 +4,7 @@ set -euo pipefail
 AWS_REGION="${AWS_REGION:-us-east-1}"
 AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-713220200108}"
 ECR_REPO_NAME="clauseguard-ai"
-IMAGE_TAG="v3"
+IMAGE_TAG="v4"
 IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}"
 
 echo "============================================================"

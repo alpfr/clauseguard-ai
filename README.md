@@ -5,13 +5,14 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![AWS EKS](https://img.shields.io/badge/AWS-EKS%20Auto%20Mode-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/eks/)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-12%2F12%20Passing-brightgreen?logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-17%2F17%20Passing-brightgreen?logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**ClauseGuard AI** is an enterprise-grade B2B and prosumer contract intelligence SaaS application. It empowers founders, business owners, consultants, freelancers, procurement teams, and legal counsels to instantly audit agreements, detect hidden legal risks across 18 specialized vectors, compute a standardized 0–100 risk score, inspect word-level visual redline diffs, and generate executive audit reports in **PDF** and **Markdown** with 1 click.
+**ClauseGuard AI** is an enterprise-grade B2B and prosumer contract intelligence SaaS application. It features a **Perspective-Aware Negotiation Agent** that dynamically adapts contract risk auditing based on whether you are the **Service Provider / Vendor**, **Enterprise Buyer / Client**, or an objective **Balanced Arbitrator**. It detects hidden legal liabilities across 18 specialized vectors, dynamically recalculates 0–100 risk scores based on commercial posture, generates **copy-ready tactical negotiation email scripts**, renders word-level visual redline diffs, and generates executive audit reports in **PDF** and **Markdown** with 1 click.
 
 - **Live Production URL**: [https://clauseguard.alpfrtech.com](https://clauseguard.alpfrtech.com)
 - **Health Check Endpoint**: [https://clauseguard.alpfrtech.com/healthz](https://clauseguard.alpfrtech.com/healthz)
+- **Perspective Metadata API**: [https://clauseguard.alpfrtech.com/api/perspectives](https://clauseguard.alpfrtech.com/api/perspectives)
 
 ---
 
@@ -49,7 +50,15 @@ graph TD
 
 ## Key Features
 
-### 1. 🔍 Classified Red-Flag Audit (18 Legal Risk Vectors)
+### 1. 🎯 Perspective-Aware Negotiation Agent (Vendor vs. Buyer vs. Balanced)
+Audits agreements with commercial role awareness rather than generic one-size-fits-all rules:
+- **Service Provider / Vendor Mode**: Protects revenue, cashflow, pre-existing tools/background IP, and caps liability at 12-month fees. Flags Net-90 and unilateral IP assignment as Critical risks.
+- **Enterprise Buyer / Client Mode**: Protects corporate assets, work product deliverables, supplier accountability, SLA remedies, and unilateral termination flexibility.
+- **Neutral Balanced Mode**: Enforces mutual commercial reciprocity and industry-standard bilateral covenants.
+- **Dynamic 0–100 Risk Score Recalculation**: Terms hostile to contractors score high risk (e.g. 100/100) in Vendor posture, but score low/favorable (e.g. 40/100) in Buyer posture.
+- **💬 Tactical Negotiation Email Scripts**: Every flagged issue comes with an instant copy-ready counter-email script explaining corporate risk policy and requesting the exact redlined revision.
+
+### 2. 🔍 Classified Red-Flag Audit (18 Legal Risk Vectors)
 Audits contract text across 18 specialized legal risk vectors, including:
 - **Indemnification**: Uncapped, one-sided indemnity without gross negligence/willful misconduct boundaries.
 - **Limitation of Liability**: Nominal $100 caps, waiver of direct damages, or asymmetric exclusions.
@@ -58,7 +67,7 @@ Audits contract text across 18 specialized legal risk vectors, including:
 - **Restrictive Covenants**: Multi-year worldwide non-competes, aggressive customer non-solicitation, and perpetual NDAs.
 - **Payment & Invoicing**: Unreasonable Net-90/120 payment terms, conditional "pay-when-paid" clauses, and audit rights.
 
-### 2. ↔️ Side-by-Side Visual Redline & Diff Viewer
+### 3. ↔️ Side-by-Side Visual Redline & Diff Viewer
 Inspect exact word-level and token-level changes for any flagged clause:
 - **Dual View Modes**:
   - **Side-by-Side**: Two parallel columns comparing the original harsh language against the protective counter-proposal.

@@ -11,6 +11,11 @@ from typing import Dict, Any, List, Optional
 import requests
 
 from services.diff_engine import compute_word_diff
+from services.perspective_engine import (
+    apply_perspective,
+    recalculate_score_for_posture,
+    get_posture_metadata,
+)
 
 logger = logging.getLogger("clauseguard.analyzer")
 
@@ -321,8 +326,13 @@ def call_llm_analyzer(text: str, api_key: str, provider: str = "openai") -> Opti
     return None
 
 
-def analyze_contract(text: str, filename: str = "agreement.pdf", api_key: Optional[str] = None) -> Dict[str, Any]:
-    """Execute full contract analysis pipeline."""
+def analyze_contract(
+    text: str,
+    filename: str = "agreement.pdf",
+    posture: str = "vendor",
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """Execute full contract analysis pipeline with perspective-aware posture adaptation."""
     # Try LLM if user provided key or env key
     active_key = api_key or os.getenv("OPENAI_API_KEY")
     if active_key:
@@ -332,8 +342,12 @@ def analyze_contract(text: str, filename: str = "agreement.pdf", api_key: Option
 
     # Autonomous heuristic pipeline
     metadata = extract_metadata(text)
-    findings = evaluate_rules(text)
-    risk_summary = calculate_risk_score(findings)
+    raw_findings = evaluate_rules(text)
+
+    # Apply commercial perspective posture (vendor vs buyer vs balanced)
+    posture_meta = get_posture_metadata(posture)
+    findings = apply_perspective(raw_findings, posture=posture)
+    risk_summary = recalculate_score_for_posture(findings, posture=posture)
 
     # Pre-compute word-level redline diff for each finding
     for f in findings:
@@ -348,5 +362,7 @@ def analyze_contract(text: str, filename: str = "agreement.pdf", api_key: Option
         "risk_summary": risk_summary,
         "findings": findings,
         "char_count": len(text),
-        "analyzer_engine": "ClauseGuard Autonomous Legal Engine v3.0",
+        "posture": posture_meta["id"],
+        "posture_info": posture_meta,
+        "analyzer_engine": "ClauseGuard Autonomous Legal Engine v4.0 (Perspective-Aware)",
     }

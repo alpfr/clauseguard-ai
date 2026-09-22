@@ -47,6 +47,36 @@
 
     <!-- Upload & Quick-Start Workspace -->
     <section class="upload-workspace" id="upload-section">
+      <!-- Perspective & Negotiation Posture Selector -->
+      <div class="perspective-control-wrapper">
+        <div class="perspective-label">
+          <span>🎯 Select Your Negotiation Posture:</span>
+        </div>
+        <div class="perspective-switcher" id="perspective-switcher" role="radiogroup" aria-label="Negotiation Perspective">
+          <button type="button" class="posture-btn active" data-posture="vendor" aria-checked="true" role="radio">
+            <span class="posture-icon">🛡️</span>
+            <span class="posture-text-wrap">
+              <span class="posture-title">Vendor / Contractor</span>
+              <span class="posture-hint">Protects service providers &amp; freelancers</span>
+            </span>
+          </button>
+          <button type="button" class="posture-btn" data-posture="buyer" aria-checked="false" role="radio">
+            <span class="posture-icon">🏢</span>
+            <span class="posture-text-wrap">
+              <span class="posture-title">Enterprise Buyer / Client</span>
+              <span class="posture-hint">Protects corporate purchasers &amp; IP rights</span>
+            </span>
+          </button>
+          <button type="button" class="posture-btn" data-posture="balanced" aria-checked="false" role="radio">
+            <span class="posture-icon">⚖️</span>
+            <span class="posture-text-wrap">
+              <span class="posture-title">Balanced / Neutral</span>
+              <span class="posture-hint">Objective commercial baseline standards</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
       <div class="dropzone-container" id="dropzone" role="button" tabindex="0" aria-label="File upload dropzone">
         <div class="upload-icon-wrapper">📄</div>
         <h2 class="upload-prompt">Drop your contract PDF, DOCX, or TXT here</h2>
@@ -128,6 +158,10 @@
           
           <div class="metadata-grid">
             <div class="meta-item">
+              <div class="meta-label">Active Posture</div>
+              <div class="meta-value" id="meta-posture">🛡️ Vendor / Contractor</div>
+            </div>
+            <div class="meta-item">
               <div class="meta-label">Contract Type</div>
               <div class="meta-value" id="meta-type">--</div>
             </div>
@@ -139,13 +173,22 @@
               <div class="meta-label">Governing Law</div>
               <div class="meta-value" id="meta-jurisdiction">--</div>
             </div>
-            <div class="meta-item">
-              <div class="meta-label">Term Duration</div>
-              <div class="meta-value" id="meta-term">--</div>
-            </div>
           </div>
         </div>
       </article>
+
+      <!-- Dashboard Interactive Posture Switcher Bar -->
+      <div class="results-posture-bar">
+        <div class="results-posture-left">
+          <span class="results-posture-label">Negotiation Posture:</span>
+          <div class="results-posture-selector" id="results-posture-selector">
+            <button type="button" class="posture-pill active" data-posture="vendor">🛡️ Vendor / Contractor</button>
+            <button type="button" class="posture-pill" data-posture="buyer">🏢 Enterprise Buyer</button>
+            <button type="button" class="posture-pill" data-posture="balanced">⚖️ Balanced</button>
+          </div>
+        </div>
+        <span class="results-posture-desc" id="results-posture-desc">Protecting service providers &amp; contractors</span>
+      </div>
 
       <!-- Action Controls Bar -->
       <div class="action-bar">

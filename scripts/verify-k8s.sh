@@ -69,6 +69,17 @@ else
   exit 1
 fi
 
+# 4d. Test Perspective & Negotiation Postures API
+echo ""
+echo "[4d/5] Testing Perspective & Negotiation Engine API (https://${TARGET_DOMAIN}/api/perspectives)..."
+PERSPECTIVE_RES=$(curl -fsSL --retry 3 --retry-delay 2 "https://${TARGET_DOMAIN}/api/perspectives")
+if echo "${PERSPECTIVE_RES}" | grep -q "vendor" && echo "${PERSPECTIVE_RES}" | grep -q "buyer" && echo "${PERSPECTIVE_RES}" | grep -q "balanced"; then
+  echo "✔ /api/perspectives returned catalog of negotiation postures"
+else
+  echo "✖ /api/perspectives failed"
+  exit 1
+fi
+
 # 5. Regression Check on original demo app
 echo ""
 echo "[5/5] Regression check: Verifying original demo microservice (https://${ORIGINAL_DEMO_DOMAIN})..."

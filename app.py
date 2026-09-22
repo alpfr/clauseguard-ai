@@ -25,6 +25,7 @@ from services.report_generator import (
     generate_summary_text,
 )
 from services.diff_engine import compute_word_diff
+from services.perspective_engine import POSTURE_METADATA
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,7 +36,7 @@ logger = logging.getLogger("clauseguard.main")
 app = FastAPI(
     title="ClauseGuard AI",
     description="Automated Legal Risk Auditing, Clause Intelligence & Contract Assistant",
-    version="2.0.0"
+    version="2.1.0"
 )
 
 app.add_middleware(
@@ -56,6 +57,7 @@ if os.path.isdir(STATIC_DIR):
 class AnalyzeTextRequest(BaseModel):
     text: str
     filename: Optional[str] = "contract.txt"
+    posture: Optional[str] = "vendor"
     api_key: Optional[str] = None
 
 
@@ -71,7 +73,7 @@ class ChatRequest(BaseModel):
 @app.get("/healthz")
 async def health_check():
     """Kubernetes liveness and readiness probe endpoint."""
-    return {"status": "ok", "app": "ClauseGuard AI", "version": "2.0.0"}
+    return {"status": "ok", "app": "ClauseGuard AI", "version": "2.1.0"}
 
 
 @app.get("/api/info")
@@ -82,9 +84,18 @@ async def system_info():
         "status": "running",
         "pod": hostname,
         "product": "ClauseGuard AI",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "environment": os.getenv("ENVIRONMENT", "Production")
     }
+
+
+# ------------------------------------------------------------------------------
+# Perspective & Negotiation Engine API
+# ------------------------------------------------------------------------------
+@app.get("/api/perspectives")
+async def get_perspectives():
+    """Return available negotiation perspectives/postures and their focus."""
+    return POSTURE_METADATA
 
 
 # ------------------------------------------------------------------------------
@@ -125,6 +136,7 @@ async def get_sample_detail(sample_id: str):
 @app.post("/api/analyze/upload")
 async def analyze_file_upload(
     file: UploadFile = File(...),
+    posture: Optional[str] = Form("vendor"),
     api_key: Optional[str] = Form(None)
 ):
     """Upload PDF, DOCX, or TXT file and run risk analysis."""
@@ -137,7 +149,7 @@ async def analyze_file_upload(
         if not text.strip():
             raise HTTPException(status_code=400, detail="Could not extract readable text from document.")
 
-        analysis = analyze_contract(text, filename=filename, api_key=api_key)
+        analysis = analyze_contract(text, filename=filename, posture=posture or "vendor", api_key=api_key)
         analysis["document_meta"] = {
             "total_pages": parsed["total_pages"],
             "char_count": parsed["char_count"],
@@ -156,7 +168,12 @@ async def analyze_raw_text(payload: AnalyzeTextRequest):
     if not payload.text or not payload.text.strip():
         raise HTTPException(status_code=400, detail="Contract text is required.")
 
-    analysis = analyze_contract(payload.text, filename=payload.filename or "agreement.txt", api_key=payload.api_key)
+    analysis = analyze_contract(
+        payload.text,
+        filename=payload.filename or "agreement.txt",
+        posture=payload.posture or "vendor",
+        api_key=payload.api_key
+    )
     analysis["document_meta"] = {
         "total_pages": max(1, len(payload.text) // 2500),
         "char_count": len(payload.text),

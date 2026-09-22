@@ -18,6 +18,10 @@ def generate_markdown_report(analysis: Dict[str, Any]) -> str:
     metrics = summary.get("metrics", {})
     findings = analysis.get("findings", [])
     doc_meta = analysis.get("document_meta", {})
+    posture_info = analysis.get("posture_info", {})
+    posture_title = posture_info.get("title", "Vendor / Contractor")
+    posture_icon = posture_info.get("icon", "🛡️")
+    posture_focus = posture_info.get("focus", "Protecting Service Providers & Contractors")
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     score = summary.get("score", 0)
@@ -38,6 +42,7 @@ def generate_markdown_report(analysis: Dict[str, Any]) -> str:
         f"**Audit Generated**: {now_str}  ",
         f"**Document Filename**: `{filename}`  ",
         f"**Contract Classification**: {metadata.get('contract_type', 'Commercial Agreement')}  ",
+        f"**Audit Posture / Perspective**: {posture_icon} **{posture_title}** (*{posture_focus}*)  ",
         f"",
         f"---",
         f"",
@@ -47,6 +52,7 @@ def generate_markdown_report(analysis: Dict[str, Any]) -> str:
         f"| :--- | :--- |",
         f"| **Overall Risk Score** | {score_badge} |",
         f"| **Risk Classification** | **{grade}** |",
+        f"| **Active Audit Perspective** | {posture_icon} **{posture_title}** |",
         f"| **Critical Red Flags** | `{metrics.get('critical_flags', 0)}` |",
         f"| **High-Risk Items** | `{metrics.get('high_flags', 0)}` |",
         f"| **Cautionary Warnings** | `{metrics.get('warnings', 0)}` |",
@@ -62,6 +68,7 @@ def generate_markdown_report(analysis: Dict[str, Any]) -> str:
         f"",
         f"| Parameter | Identified Value |",
         f"| :--- | :--- |",
+        f"| **Audit Posture** | {posture_icon} {posture_title} |",
         f"| **Governing Law / Jurisdiction** | {metadata.get('governing_law', 'Not specified')} |",
         f"| **Identified Parties** | {', '.join(metadata.get('parties', ['Unspecified'])) if metadata.get('parties') else 'Unspecified'} |",
         f"| **Agreement Term** | {metadata.get('term', 'Not specified')} |",
@@ -89,6 +96,18 @@ def generate_markdown_report(analysis: Dict[str, Any]) -> str:
             else:
                 badge = "🟡 **CAUTION / WARNING**"
 
+            script = item.get("negotiation_script")
+            script_block = []
+            if script:
+                script_block = [
+                    f"#### 💬 Tactical Negotiation Email Script:",
+                    f"> ✉️ **Copy-and-Send Counter Script:**",
+                    f"> ```text",
+                    f"> " + script.replace("\n", "\n> "),
+                    f"> ```",
+                    f""
+                ]
+
             lines.extend([
                 f"### Finding #{idx}: {item.get('title', 'Contractual Term')} ({badge})",
                 f"",
@@ -106,7 +125,8 @@ def generate_markdown_report(analysis: Dict[str, Any]) -> str:
                 f"#### Recommended Counter-Proposal (Redline Language):",
                 f"> 💡 **Suggested Amendment:**  ",
                 f"> {item.get('counter_proposal', '')}",
-                f"",
+                f""
+            ] + script_block + [
                 f"---",
                 f""
             ])
@@ -129,6 +149,9 @@ def generate_summary_text(analysis: Dict[str, Any]) -> str:
     summary = analysis.get("risk_summary", {})
     metrics = summary.get("metrics", {})
     findings = analysis.get("findings", [])
+    posture_info = analysis.get("posture_info", {})
+    posture_title = posture_info.get("title", "Vendor / Contractor")
+    posture_icon = posture_info.get("icon", "🛡️")
     
     score = summary.get("score", 0)
     grade = summary.get("grade", "Unknown")
@@ -137,6 +160,7 @@ def generate_summary_text(analysis: Dict[str, Any]) -> str:
     findings_str = "\n".join(top_findings) if top_findings else "- No severe flags detected"
 
     return f"""🛡️ ClauseGuard AI Audit Summary: {filename}
+Audit Perspective: {posture_icon} {posture_title}
 Risk Score: {score}/100 ({grade})
 Critical Flags: {metrics.get('critical_flags', 0)} | High Flags: {metrics.get('high_flags', 0)} | Warnings: {metrics.get('warnings', 0)}
 
@@ -157,6 +181,10 @@ def generate_html_report(analysis: Dict[str, Any]) -> str:
     metrics = summary.get("metrics", {})
     findings = analysis.get("findings", [])
     doc_meta = analysis.get("document_meta", {})
+    posture_info = analysis.get("posture_info", {})
+    posture_title = posture_info.get("title", "Vendor / Contractor")
+    posture_icon = posture_info.get("icon", "🛡️")
+    posture_focus = posture_info.get("focus", "Protecting Service Providers & Contractors")
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%B %d, %Y - %H:%M UTC")
 
     score = summary.get("score", 0)
@@ -190,6 +218,16 @@ def generate_html_report(analysis: Dict[str, Any]) -> str:
             sev_class = "badge-warning"
             sev_label = "WARNING"
 
+        script = f.get("negotiation_script")
+        script_html = ""
+        if script:
+            script_html = f"""
+            <div class="script-box">
+              <div class="box-label">💬 Tactical Negotiation Email Script</div>
+              <div class="script-text">{script}</div>
+            </div>
+            """
+
         findings_html_list.append(f"""
         <div class="finding-card">
           <div class="finding-header">
@@ -214,6 +252,8 @@ def generate_html_report(analysis: Dict[str, Any]) -> str:
               <div class="box-label">Recommended Counter-Proposal (Redline Language)</div>
               <p class="proposal-text">{f.get('counter_proposal', '')}</p>
             </div>
+
+            {script_html}
           </div>
         </div>
         """)
@@ -539,6 +579,35 @@ def generate_html_report(analysis: Dict[str, Any]) -> str:
       font-weight: 500;
     }}
 
+    .script-box {{
+      background: #eff6ff;
+      border-left: 4px solid var(--primary);
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 8px;
+    }}
+
+    .script-text {{
+      font-size: 13px;
+      color: #1e3a8a;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-family: inherit;
+    }}
+
+    .posture-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+    }}
+
     /* Footer / Disclaimer */
     .disclaimer {{
       border-top: 1px solid var(--border);
@@ -589,6 +658,9 @@ def generate_html_report(analysis: Dict[str, Any]) -> str:
       <div class="report-subtitle">
         Document: <strong>{filename}</strong> • Generated: {now_str}
       </div>
+      <div style="margin-top: 10px;">
+        <span class="posture-badge">{posture_icon} Perspective: {posture_title} • {posture_focus}</span>
+      </div>
     </div>
 
     <!-- Executive Score Card -->
@@ -612,6 +684,10 @@ def generate_html_report(analysis: Dict[str, Any]) -> str:
     <!-- Agreement Metadata -->
     <h2 class="section-title">📄 Agreement Parameters</h2>
     <div class="metadata-grid">
+      <div class="meta-item" style="grid-column: span 2; background: #f0fdf4; border-color: #bbf7d0;">
+        <div class="meta-label">Active Audit Perspective & Negotiation Posture</div>
+        <div class="meta-val">{posture_icon} {posture_title} — {posture_focus}</div>
+      </div>
       <div class="meta-item">
         <div class="meta-label">Contract Classification</div>
         <div class="meta-val">{metadata.get('contract_type', 'Commercial Agreement')}</div>
